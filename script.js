@@ -46,7 +46,7 @@
           <p class="desc">${p.desc}</p>
           <div class="card-foot">
             <span class="price">Price on request</span>
-            <button class="btn ${btnCls}" onclick="openModal('${p.code}','${p.name.replace(/'/g,"")}')">Request order</button>
+            <button class="btn ${btnCls}" id="add-btn-${p.code}" onclick="addToCart('${p.code}')">Add to cart</button>
           </div>
         </div>
       </div>`;
@@ -54,6 +54,10 @@
 
   document.getElementById('grid-fa').innerHTML = products.fa.map(p => cardHTML(p,'fa')).join('');
   document.getElementById('grid-af').innerHTML = products.af.map(p => cardHTML(p,'af')).join('');
+
+  // Flat lookup of every product by code, used by the cart
+  const allProducts = {};
+  [...products.fa, ...products.af].forEach(p => { allProducts[p.code] = p; });
 
   // ---------- View switching ----------
   function showView(view){
@@ -81,14 +85,89 @@
     }
   });
 
-  // ---------- Modal ----------
-  let currentProduct = {code:'', name:''};
-  function openModal(code, name){
-    currentProduct = {code, name};
-    document.getElementById('modal-prod-tag').textContent = code + ' · ' + name;
-    document.getElementById('order-form').style.display = 'block';
+  // ---------- Cart ----------
+  let cart = {}; // { code: qty }
+
+  function addToCart(code){
+    cart[code] = (cart[code] || 0) + 1;
+    updateCartBadge();
+    flashAdded(code);
+  }
+
+  function flashAdded(code){
+    const btn = document.getElementById('add-btn-' + code);
+    if(!btn) return;
+    const original = btn.textContent;
+    btn.textContent = 'Added ✓';
+    setTimeout(() => { btn.textContent = original; }, 900);
+  }
+
+  function changeQty(code, delta){
+    cart[code] = (cart[code] || 0) + delta;
+    if(cart[code] <= 0) delete cart[code];
+    updateCartBadge();
+    renderCartItems();
+  }
+
+  function removeFromCart(code){
+    delete cart[code];
+    updateCartBadge();
+    renderCartItems();
+  }
+
+  function cartCount(){
+    return Object.values(cart).reduce((a,b) => a + b, 0);
+  }
+
+  function updateCartBadge(){
+    const badge = document.getElementById('cart-badge');
+    const count = cartCount();
+    if(count > 0){
+      badge.style.display = 'flex';
+      badge.textContent = count;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function cartRowHTML(code){
+    const p = allProducts[code];
+    const qty = cart[code];
+    return `
+      <div class="cart-row">
+        <div class="cart-row-icon">${p.icon}</div>
+        <div class="cart-row-info">
+          <div class="cart-row-name">${p.name}</div>
+          <div class="cart-row-code">${p.code}</div>
+        </div>
+        <div class="cart-row-qty">
+          <button type="button" onclick="changeQty('${code}',-1)" aria-label="Decrease">−</button>
+          <span>${qty}</span>
+          <button type="button" onclick="changeQty('${code}',1)" aria-label="Increase">+</button>
+        </div>
+        <button type="button" class="cart-row-remove" onclick="removeFromCart('${code}')" aria-label="Remove">×</button>
+      </div>`;
+  }
+
+  function renderCartItems(){
+    const codes = Object.keys(cart);
+    const container = document.getElementById('cart-items');
+    const emptyMsg = document.getElementById('cart-empty');
+    const form = document.getElementById('order-form');
+    if(codes.length === 0){
+      container.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      form.style.display = 'none';
+    } else {
+      emptyMsg.style.display = 'none';
+      form.style.display = 'block';
+      container.innerHTML = codes.map(code => cartRowHTML(code)).join('');
+    }
+  }
+
+  function openCart(){
+    renderCartItems();
     document.getElementById('success-box').classList.remove('show');
-    document.getElementById('order-form').reset();
     document.getElementById('overlay').classList.add('open');
   }
   function closeModal(){
@@ -100,13 +179,18 @@
 
   document.getElementById('order-form').addEventListener('submit', function(e){
     e.preventDefault();
+    const codes = Object.keys(cart);
+    if(codes.length === 0) return;
+
+    const itemLines = codes.map(code => `${allProducts[code].code} - ${allProducts[code].name} x${cart[code]}`);
+
     const payload = {
-      product: currentProduct.code + ' - ' + currentProduct.name,
+      product: itemLines.join('; '),
       name: document.getElementById('f-name').value,
       company: document.getElementById('f-company').value,
       phone: document.getElementById('f-phone').value,
       email: document.getElementById('f-email').value,
-      qty: document.getElementById('f-qty').value,
+      qty: itemLines.join(', '),
       notes: document.getElementById('f-notes').value
     };
 
@@ -122,18 +206,21 @@
     // Also open a pre-filled WhatsApp chat as a backup, in case the automation is ever down.
     const lines = [
       `New order request`,
-      `Product: ${payload.product}`,
+      `Items:`,
+      ...itemLines.map(l => ` - ${l}`),
       `Name: ${payload.name}`,
       payload.company ? `Company: ${payload.company}` : null,
       `Phone: ${payload.phone}`,
       `Email: ${payload.email}`,
-      `Quantity: ${payload.qty}`,
       payload.notes ? `Notes: ${payload.notes}` : null
     ].filter(Boolean).join('\n');
 
     const waURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines)}`;
     document.getElementById('wa-fallback-link').href = waURL;
     window.location.href = waURL;
+
+    cart = {};
+    updateCartBadge();
     showSuccess();
   });
 
