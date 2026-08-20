@@ -1,6 +1,8 @@
 // ---------- CONFIG ----------
   // WhatsApp number that receives order requests. Digits only, country code first, no + or leading zeros.
   const WHATSAPP_NUMBER = "962792248085";
+  // Make.com webhook — pushes order data automatically to WhatsApp (no tap needed on the customer's end).
+  const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/jeap966t1hqdf2xds48gceu7nfh8jb8o";
 
   // ---------- PRODUCT DATA (replace with your real products & photos) ----------
   const iconBag = `<svg viewBox="0 0 24 24" fill="none" stroke="#1E2130" stroke-width="1.6"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>`;
@@ -61,6 +63,24 @@
     window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
   }
 
+  // Used by nav buttons: switches view and closes the mobile dropdown menu
+  function navTo(view){
+    showView(view);
+    document.getElementById('nav-links').classList.remove('open');
+  }
+
+  // ---------- Mobile menu toggle ----------
+  function toggleMenu(){
+    document.getElementById('nav-links').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e){
+    const nav = document.getElementById('nav-links');
+    const toggle = document.getElementById('menu-toggle');
+    if(nav.classList.contains('open') && !nav.contains(e.target) && !toggle.contains(e.target)){
+      nav.classList.remove('open');
+    }
+  });
+
   // ---------- Modal ----------
   let currentProduct = {code:'', name:''};
   function openModal(code, name){
@@ -90,6 +110,16 @@
       notes: document.getElementById('f-notes').value
     };
 
+    // Push the order to Make.com automatically (no tap needed on the customer's end).
+    // keepalive:true lets the request finish even as the page redirects to WhatsApp below.
+    fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      keepalive: true
+    }).catch(() => { /* Make.com push failed silently — WhatsApp fallback below still works */ });
+
+    // Also open a pre-filled WhatsApp chat as a backup, in case the automation is ever down.
     const lines = [
       `New order request`,
       `Product: ${payload.product}`,
