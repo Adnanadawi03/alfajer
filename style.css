@@ -82,6 +82,7 @@
     .nav-inner{height:64px;}
     .brand{font-size:15.5px;}
     .brand .mark{height:36px;}
+    .brand-text{display:none;}
     nav.links{
       position:absolute;top:64px;left:0;right:0;
       background:#fff;border-bottom:1px solid var(--line);
