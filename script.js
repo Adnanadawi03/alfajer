@@ -188,10 +188,14 @@
     if(e.target.id === 'overlay') closeModal();
   });
 
-  document.getElementById('order-form').addEventListener('submit', function(e){
+  document.getElementById('order-form').addEventListener('submit', async function(e){
     e.preventDefault();
     const codes = Object.keys(cart);
     if(codes.length === 0) return;
+
+    const submitBtn = e.target.querySelector('.submit-btn');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '';
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = currentLang === 'ar' ? 'جارٍ الإرسال…' : 'Sending…'; }
 
     const itemLines = codes.map(code => {
       const p = allProducts[code];
@@ -223,19 +227,22 @@
     }).catch(() => { /* Make.com push failed silently — WhatsApp fallback below still works */ });
 
     // Save the order to Firestore so it shows up in the admin dashboard (admin.html).
+    // IMPORTANT: this is awaited BEFORE the WhatsApp redirect below — navigating away
+    // immediately would cancel this network request before it finishes.
     if(typeof window.saveOrderToFirestore === 'function'){
-      window.saveOrderToFirestore({
-        items: itemsStructured,
-        name: payload.name,
-        company: payload.company,
-        phone: payload.phone,
-        email: payload.email,
-        notes: payload.notes
-      }).then(() => {
+      try {
+        await window.saveOrderToFirestore({
+          items: itemsStructured,
+          name: payload.name,
+          company: payload.company,
+          phone: payload.phone,
+          email: payload.email,
+          notes: payload.notes
+        });
         console.log('✅ Order saved to Firestore — should appear in admin.html');
-      }).catch((err) => {
+      } catch(err) {
         console.error('❌ Firestore save failed:', err);
-      });
+      }
     } else {
       console.error('❌ window.saveOrderToFirestore is not defined — firebase-init.js did not load correctly.');
     }
@@ -263,7 +270,9 @@
     cart = {};
     updateCartBadge();
     showSuccess();
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
   });
+
 
   function showSuccess(){
     document.getElementById('order-form').style.display = 'none';
