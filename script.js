@@ -1,8 +1,6 @@
 // ---------- CONFIG ----------
   // WhatsApp number that receives order requests. Digits only, country code first, no + or leading zeros.
   const WHATSAPP_NUMBER = "962792248085";
-  // Make.com webhook — pushes order data automatically to WhatsApp (no tap needed on the customer's end).
-  const MAKE_WEBHOOK_URL = "https://hook.us2.make.com/jeap966t1hqdf2xds48gceu7nfh8jb8o";
 
   let currentLang = 'en';
 
@@ -216,15 +214,6 @@
       qty: itemLines.join(', '),
       notes: document.getElementById('f-notes').value
     };
-
-    // Push the order to Make.com automatically (no tap needed on the customer's end).
-    // keepalive:true lets the request finish even as the page redirects to WhatsApp below.
-    fetch(MAKE_WEBHOOK_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-      keepalive: true
-    }).catch(() => { /* Make.com push failed silently — WhatsApp fallback below still works */ });
 
     // Save the order to Firestore so it shows up in the admin dashboard (admin.html).
     // IMPORTANT: this is awaited BEFORE the WhatsApp redirect below — navigating away
