@@ -231,7 +231,13 @@
         phone: payload.phone,
         email: payload.email,
         notes: payload.notes
-      }).catch(() => { /* dashboard save failed silently — WhatsApp order still goes through */ });
+      }).then(() => {
+        console.log('✅ Order saved to Firestore — should appear in admin.html');
+      }).catch((err) => {
+        console.error('❌ Firestore save failed:', err);
+      });
+    } else {
+      console.error('❌ window.saveOrderToFirestore is not defined — firebase-init.js did not load correctly.');
     }
 
     // Also open a pre-filled WhatsApp chat as a backup, in case the automation is ever down.
