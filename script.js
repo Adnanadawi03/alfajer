@@ -218,6 +218,7 @@
     // Save the order to Firestore so it shows up in the admin dashboard (admin.html).
     // IMPORTANT: this is awaited BEFORE the WhatsApp redirect below — navigating away
     // immediately would cancel this network request before it finishes.
+    const debugEl = document.getElementById('debug-status');
     if(typeof window.saveOrderToFirestore === 'function'){
       try {
         await window.saveOrderToFirestore({
@@ -229,11 +230,14 @@
           notes: payload.notes
         });
         console.log('✅ Order saved to Firestore — should appear in admin.html');
+        if(debugEl){ debugEl.textContent = '✅ Dashboard sync: saved successfully'; debugEl.style.color = '#1E9B57'; }
       } catch(err) {
         console.error('❌ Firestore save failed:', err);
+        if(debugEl){ debugEl.textContent = '❌ Dashboard sync failed: ' + (err && err.message ? err.message : String(err)); debugEl.style.color = '#C0392B'; }
       }
     } else {
       console.error('❌ window.saveOrderToFirestore is not defined — firebase-init.js did not load correctly.');
+      if(debugEl){ debugEl.textContent = '❌ Dashboard sync failed: firebase-init.js did not load.'; debugEl.style.color = '#C0392B'; }
     }
 
     // Also open a pre-filled WhatsApp chat as a backup, in case the automation is ever down.
@@ -254,12 +258,15 @@
 
     const waURL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines)}`;
     document.getElementById('wa-fallback-link').href = waURL;
-    window.location.href = waURL;
 
     cart = {};
     updateCartBadge();
     showSuccess();
     if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
+
+    // Redirect to WhatsApp after a brief pause, so the confirmation (and dashboard sync
+    // status) above is actually visible for a moment before the page navigates away.
+    setTimeout(() => { window.location.href = waURL; }, 1200);
   });
 
 
