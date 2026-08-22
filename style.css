@@ -82,6 +82,11 @@
     min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;
     font-family:'Inter';
   }
+  .lang-btn{
+    font-family:'Inter';font-weight:700;font-size:13px;color:var(--ink);background:none;
+    border:1.5px solid var(--line);border-radius:99px;padding:8px 14px;cursor:pointer;transition:border-color .15s;
+  }
+  .lang-btn:hover{border-color:var(--royal);}
   .menu-toggle{
     display:none;background:none;border:none;color:var(--ink);cursor:pointer;
     padding:8px;border-radius:7px;align-items:center;justify-content:center;
@@ -104,6 +109,7 @@
     nav.links.open{display:flex;}
     nav.links button{text-align:left;width:100%;padding:12px 14px;font-size:15px;}
     .cta-pill{padding:9px 14px;font-size:12.5px;}
+    .lang-btn{padding:7px 11px;font-size:12px;}
     .menu-toggle{display:flex;}
   }
 
@@ -333,3 +339,17 @@
   .success-box p{color:var(--ink-soft);font-size:13.5px;margin-top:6px;}
 
   @media (prefers-reduced-motion: reduce){ *{transition:none!important;} }
+
+  /* ---------- RTL (Arabic) overrides ---------- */
+  html[dir="rtl"] body{font-family:'Tajawal','Inter',sans-serif;}
+  html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3, html[dir="rtl"] h4,
+  html[dir="rtl"] .display, html[dir="rtl"] .eyebrow{font-family:'Tajawal',sans-serif;}
+  html[dir="rtl"] .cart-badge{right:auto;left:0;}
+  html[dir="rtl"] nav.links button{text-align:right;}
+  html[dir="rtl"] .panel img.plogo{right:auto;left:22px;}
+  html[dir="rtl"] .panel .pmonogram{right:auto;left:24px;}
+  html[dir="rtl"] .step{padding-left:0;padding-right:52px;}
+  html[dir="rtl"] .step .snum{left:auto;right:0;}
+  html[dir="rtl"] .tag-pill{left:auto;right:12px;}
+  html[dir="rtl"] .cart-row-icon{order:2;}
+  html[dir="rtl"] .cart-row-remove{order:-1;}
